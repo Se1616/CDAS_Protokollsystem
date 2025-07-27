@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <!-- KORRIGIERTES VIEWPORT für iPhone -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CDAS Protokoll Erfassung</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            /* iPhone Fix */
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c5282 0%, #3182ce 100%);
+            color: white;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .form-section {
+            padding: 30px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .form-section:last-child {
+            border-bottom: none;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c5282;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #2c5282;
+            margin-right: 10px;
+        }
+
+        /* Sitzungstyp-Zähler */
+        .counter-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .counter-item {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .counter-label {
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .counter-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .counter-btn {
+            background: #2c5282;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .counter-btn:hover {
+            background: #3182ce;
+        }
+
+        .counter-value {
+            font-size: 18px;
+            font-weight: bold;
+            min-width: 40px;
+        }
+
+        .counter-change {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+
+        .total-number {
+            background: #2c5282;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        /* Loading-Anzeige für Zähler */
+        .counter-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* Success-Message Styling */
+        .success-message {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 15px;
+            margin: 10px 20px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        /* Basisdaten */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Mitglieder-Checkboxen */
+        .members-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .member-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f7fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .member-checkbox {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .member-checkbox:disabled {
+            opacity: 0.6;
+        }
+
+        .member-name {
+            font-weight: 500;
+            color: #4a5568;
+        }
+
+        .member-name.protocol-writer {
+            color: #2c5282;
+            font-weight: 600;
+        }
+
+        /* Tagesordnungspunkte */
+        .agenda-items {
+            space-y: 20px;
+        }
+
+        .agenda-item {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .agenda-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .agenda-number {
+            background: #2c5282;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .agenda-remove {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .agenda-remove:hover {
+            background: #c53030;
+        }
+
+        .textarea-field {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .textarea-field:focus {
+            outline: none;
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+
+        .llm-checkbox {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .llm-checkbox input {
+            width: 16px;
+            height: 16px;
+        }
+
+        .llm-checkbox label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* Bild-Upload */
+        .image-upload {
+            margin-top: 15px;
+            padding: 15px;
+            border: 2px dashed #e2e8f0;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .image-upload-btn {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .image-upload-btn:hover {
+            background: #38a169;
+        }
+
+        .image-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .image-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 4px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-remove {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #e53e3e;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* Buttons */
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            padding: 30px;
+            background: #f7fafc;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-secondary {
+            background: #718096;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4a5568;
+        }
+
+        .btn-primary {
+            background: #2c5282;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2a4d7d;
+        }
+
+        .add-agenda-btn {
+            width: 100%;
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .add-agenda-btn:hover {
+            background: #38a169;
+        }
+
+        /* iPhone/Mobile - EINFACH und 1000px */
+        @media (max-width: 1000px) {
+            
+            body {
+                font-size: 18px;
+                -webkit-text-size-adjust: none;
+                padding: 10px;
+            }
+            
+            .container {
+                margin: 5px;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 40px 25px;
+            }
+            
+            .header h1 {
+                font-size: 36px;
+                margin-bottom: 15px;
+            }
+            
+            .header p {
+                font-size: 22px;
+            }
+            
+            .form-section {
+                padding: 30px 25px;
+            }
+            
+            .section-title {
+                font-size: 26px;
+                margin-bottom: 25px;
+            }
+            
+            /* GROSS: Labels */
+            .input-label {
+                font-size: 25px !important;
+                margin-bottom: 15px;
+                font-weight: bold;
+            }
+            
+            /* GROSS: Input-Felder */
+            .input-field {
+                padding: 22px 18px !important;
+                font-size: 22px !important;
+                border-radius: 12px;
+                border: 2px solid #e2e8f0;
+                min-height: 64px;
+                line-height: 1.4;
+            }
+            
+            .input-field:focus {
+                font-size: 22px !important;
+                border-color: #3182ce;
+                box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.2);
+            }
+            
+            /* GROSS: Textareas */
+            .textarea-field {
+                padding: 22px 18px !important;
+                font-size: 22px !important;
+                border-radius: 12px;
+                border: 2px solid #e2e8f0;
+                min-height: 140px;
+                line-height: 1.5;
+            }
+            
+            .textarea-field:focus {
+                font-size: 22px !important;
+                border-color: #3182ce;
+                box-shadow: 0 0 0 4px rgba(49, 130, 206, 0.2);
+            }
+            
+            /* Grids vereinfachen */
+            .counter-grid {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+            
+            .counter-item {
+                padding: 30px 25px;
+                border-radius: 15px;
+            }
+            
+            .counter-label {
+                font-size: 24px;
+                margin-bottom: 20px;
+            }
+            
+            .input-row {
+                grid-template-columns: 1fr;
+                gap: 25px;
+            }
+            
+            .members-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .member-item {
+                padding: 25px 20px;
+                border-radius: 12px;
+            }
+            
+            .member-name {
+                font-size: 24px;
+            }
+            
+            .member-checkbox {
+                width: 32px;
+                height: 32px;
+                margin-right: 20px;
+            }
+            
+            /* GROSSE Touch-Buttons */
+            .counter-btn {
+                width: 64px;
+                height: 64px;
+                font-size: 30px;
+                font-weight: bold;
+            }
+            
+            .counter-value {
+                font-size: 38px;
+                min-width: 80px;
+                font-weight: bold;
+            }
+            
+            .counter-change {
+                font-size: 20px;
+                margin-top: 10px;
+            }
+            
+            .agenda-item {
+                padding: 30px 25px;
+                margin-bottom: 25px;
+                border-radius: 15px;
+            }
+            
+            .agenda-number {
+                width: 52px;
+                height: 52px;
+                font-size: 26px;
+                font-weight: bold;
+            }
+            
+            .agenda-remove {
+                padding: 20px 25px;
+                font-size: 20px;
+                min-height: 64px;
+                border-radius: 10px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                gap: 25px;
+                padding: 40px 25px;
+            }
+            
+            .btn {
+                width: 100%;
+                padding: 25px;
+                font-size: 26px;
+                border-radius: 15px;
+                min-height: 74px;
+                font-weight: bold;
+            }
+            
+            .add-agenda-btn {
+                padding: 28px;
+                font-size: 26px;
+                border-radius: 15px;
+                min-height: 74px;
+            }
+            
+            .image-upload-btn {
+                padding: 22px 30px;
+                font-size: 24px;
+                min-height: 64px;
+                border-radius: 10px;
+            }
+            
+            .llm-checkbox {
+                margin-top: 20px;
+                gap: 15px;
+            }
+            
+            .llm-checkbox input {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .llm-checkbox label {
+                font-size: 22px;
+            }
+            
+            .total-number {
+                padding: 25px;
+                font-size: 28px;
+                margin-top: 30px;
+                border-radius: 15px;
+                font-weight: bold;
+            }
+            
+            .success-message,
+            .counter-loading {
+                padding: 25px;
+                font-size: 24px;
+                margin: 20px 25px;
+                border-radius: 12px;
+            }
+        }
+    </style>
+</head>
+<!-- Rest der HTML bleibt gleich -->
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>CLUB DER ALTEN SÄCKE</h1>
+            <p>Protokoll-Erfassung</p>
+        </div>
+
+        <form id="protocolForm">
+            <!-- Sitzungstyp-Zähler -->
+            <div class="form-section">
+                <div class="section-title">🔢 Sitzungstyp</div>
+                <div id="counters-container">
+                    <!-- Loading-Anzeige für Zähler -->
+                    <div id="counters-loading" class="counter-loading">
+                        ⏳ Prüfe letztes Protokoll...
+                    </div>
+                    
+                    <!-- Zähler-Grid (wird dynamisch gefüllt) -->
+                    <div id="counter-grid" class="counter-grid" style="display: none;">
+                        <div class="counter-item">
+                            <div class="counter-label">Ordentliche Sitzungen</div>
+                            <div class="counter-controls">
+                                <button type="button" class="counter-btn" onclick="updateCounter('ordentlich', -1)">−</button>
+                                <span class="counter-value" id="counter-ordentlich">-</span>
+                                <button type="button" class="counter-btn" onclick="updateCounter('ordentlich', 1)">+</button>
+                            </div>
+                            <div class="counter-change" id="change-ordentlich">Loading...</div>
+                        </div>
+                        
+                        <div class="counter-item">
+                            <div class="counter-label">Außerordentliche Sitzungen</div>
+                            <div class="counter-controls">
+                                <button type="button" class="counter-btn" onclick="updateCounter('ausserordentlich', -1)">−</button>
+                                <span class="counter-value" id="counter-ausserordentlich">-</span>
+                                <button type="button" class="counter-btn" onclick="updateCounter('ausserordentlich', 1)">+</button>
+                            </div>
+                            <div class="counter-change" id="change-ausserordentlich">Loading...</div>
+                        </div>
+                        
+                        <div class="counter-item">
+                            <div class="counter-label">Festsitzungen</div>
+                            <div class="counter-controls">
+                                <button type="button" class="counter-btn" onclick="updateCounter('fest', -1)">−</button>
+                                <span class="counter-value" id="counter-fest">-</span>
+                                <button type="button" class="counter-btn" onclick="updateCounter('fest', 1)">+</button>
+                            </div>
+                            <div class="counter-change" id="change-fest">Loading...</div>
+                        </div>
+                    </div>
+                    
+                    <div id="total-number" class="total-number" style="display: none;">
+                        → Gesamte Sitzungsnummer: <span id="total-number-value">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Basisdaten -->
+            <div class="form-section">
+                <div class="section-title">📅 Basisdaten</div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label class="input-label" for="sitzungsdatum">Sitzungsdatum</label>
+                        <input type="date" id="sitzungsdatum" name="sitzungsdatum" class="input-field" required>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label" for="ort">Ort</label>
+                        <input type="text" id="ort" name="ort" class="input-field" value="Clublokal" required>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label" for="naechster-termin">Nächster Termin</label>
+                    <input type="date" id="naechster-termin" name="naechster-termin" class="input-field" required>
+                </div>
+            </div>
+
+            <!-- Teilnehmer -->
+            <div class="form-section">
+                <div class="section-title">👥 Teilnehmer</div>
+                <div id="members-grid" class="members-grid">
+                    <!-- Mitglieder werden dynamisch geladen -->
+                    <div class="counter-loading">⏳ Lade Mitglieder...</div>
+                </div>
+            </div>
+
+            <!-- Tagesordnungspunkte -->
+            <div class="form-section">
+                <div class="section-title">📝 Tagesordnungspunkte</div>
+                <div id="agenda-items">
+                    <!-- Tagesordnungspunkte werden hier dynamisch eingefügt -->
+                </div>
+                <button type="button" class="add-agenda-btn" onclick="addAgendaItem()">+ Tagesordnungspunkt hinzufügen</button>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="saveDraft()">💾 Zwischenspeichern</button>
+                <button type="submit" class="btn btn-primary">📋 Protokoll erstellen & versenden</button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // ==================== GLOBALE VARIABLEN ====================
+        
+        let agendaItemCount = 0;
+        let originalCounters = { ordentlich: 12, ausserordentlich: 6, fest: 2 };
+        let membersLoaded = false;
+        
+        // AUTO-RESUME Variablen
+        let loadedProtocolId = null;
+        let isLoadingExistingProtocol = false;
+        
+        // ==================== INITIALISIERUNG MIT AUTO-RESUME ====================
+        
+        // Erweiterte Initialisierung beim Laden der Seite
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Initialisiere CDAS Protokoll-System...');
+            
+            // 1. Datum-Funktionen
+            initializeDates();
+            
+            // 2. AUTO-RESUME: Prüfen ob letztes Draft geladen werden soll
+            checkForLastDraft();
+            
+            console.log('✅ System-Initialisierung gestartet');
+        });
+
+        // AUTO-RESUME: Letztes Draft prüfen und laden
+        function checkForLastDraft() {
+            console.log('🔍 Prüfe auf letztes Draft-Protokoll...');
+            
+            // Loading-Anzeige für alle Bereiche
+            showGlobalLoading('Prüfe letztes Protokoll...');
+            
+            // TIMING-FIX: Längeres Timeout und bessere Fehlerbehandlung
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    console.log('📥 Backend-Antwort erhalten:', result);
+                    
+                    // NULL-Check hinzufügen
+                    if (!result) {
+                        console.log('❌ Leere Antwort erhalten - starte neue Sitzung');
+                        initializeNewProtocol();
+                        return;
+                    }
+                    
+                    if (result.success) {
+                        console.log('📋 Draft gefunden - lade Daten:', result.protocolData.id);
+                        loadExistingProtocol(result.protocolData);
+                    } else {
+                        console.log('ℹ️ Kein Draft gefunden - starte neue Sitzung');
+                        initializeNewProtocol();
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Fehler beim Prüfen des letzten Drafts:', error);
+                    // Fallback nach Fehler
+                    initializeNewProtocol();
+                })
+                .getLastDraftProtocol();
+            
+            // TIMING-FIX: Fallback-Timer falls Backend nicht antwortet
+            setTimeout(function() {
+                if (document.getElementById('counters-loading').style.display !== 'none') {
+                    console.log('⏰ Timeout erreicht - starte neue Sitzung als Fallback');
+                    initializeNewProtocol();
+                }
+            }, 10000); // 10 Sekunden Timeout
+        }
+
+        // AUTO-RESUME: Bestehendes Protokoll laden
+        function loadExistingProtocol(protocolData) {
+            isLoadingExistingProtocol = true;
+            loadedProtocolId = protocolData.id;
+            
+            console.log('📋 Lade bestehendes Protokoll:', protocolData.id);
+            
+            // 1. Zähler setzen (OHNE Server-Abfrage)
+            setCountersFromData(protocolData.counters);
+            
+            // 2. Basisdaten setzen
+            setBasicDataFromProtocol(protocolData);
+            
+            // 3. Mitglieder laden und Anwesende markieren
+            loadMembersAndMarkPresent(protocolData.anwesende);
+            
+            // 4. Tagesordnungspunkte laden
+            loadAgendaItemsFromData(protocolData.agendaItems);
+            
+            // 5. Success-Nachricht anzeigen
+            showSuccessMessage('✅ Draft-Protokoll "' + protocolData.id + '" geladen - Weiterarbeit möglich');
+            
+            hideGlobalLoading();
+        }
+
+        // Neue Sitzung initialisieren
+        function initializeNewProtocol() {
+            isLoadingExistingProtocol = false;
+            loadedProtocolId = null;
+            
+            console.log('📝 Initialisiere neue Sitzung');
+            
+            // 1. Zähler vom Server laden
+            loadCountersFromServer();
+            
+            // 2. Mitglieder laden
+            loadMembersFromServer();
+            
+            // 3. Ersten Tagesordnungspunkt hinzufügen
+            addAgendaItem();
+            
+            hideGlobalLoading();
+        }
+
+        // AUTO-RESUME: Zähler aus geladenen Daten setzen
+        function setCountersFromData(counters) {
+            // Direkt setzen ohne Server-Abfrage
+            document.getElementById('counter-ordentlich').textContent = counters.ordentlich;
+            document.getElementById('counter-ausserordentlich').textContent = counters.ausserordentlich;
+            document.getElementById('counter-fest').textContent = counters.fest;
+            
+            // Änderungsanzeigen auf "geladen" setzen
+            document.getElementById('change-ordentlich').textContent = '(aus Draft geladen)';
+            document.getElementById('change-ausserordentlich').textContent = '(aus Draft geladen)';
+            document.getElementById('change-fest').textContent = '(aus Draft geladen)';
+            
+            updateTotalNumber();
+            showCountersUI();
+            
+            console.log('✅ Zähler aus Draft geladen:', counters);
+        }
+
+        // AUTO-RESUME: Basisdaten setzen
+        function setBasicDataFromProtocol(protocolData) {
+            document.getElementById('sitzungsdatum').value = protocolData.sitzungsdatum;
+            document.getElementById('ort').value = protocolData.ort;
+            document.getElementById('naechster-termin').value = protocolData.naechsterTermin;
+            
+            console.log('✅ Basisdaten geladen');
+        }
+
+        // AUTO-RESUME: Mitglieder laden und Anwesende markieren
+        function loadMembersAndMarkPresent(anwesendeIds) {
+            google.script.run
+                .withSuccessHandler(function(members) {
+                    console.log('✅ Mitglieder geladen:', members.length);
+                    renderMembersWithSelection(members, anwesendeIds);
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Fehler beim Laden der Mitglieder:', error);
+                    renderFallbackMembersWithSelection(anwesendeIds);
+                })
+                .getMembersForFrontend();
+        }
+
+        // AUTO-RESUME: Mitglieder mit Auswahl rendern
+        function renderMembersWithSelection(members, anwesendeIds) {
+            const container = document.getElementById('members-grid');
+            container.innerHTML = '';
+            
+            members.forEach(function(member) {
+                const isProtocolWriter = member.name === 'Josef Schnürer';
+                const isChecked = anwesendeIds.includes(member.id.toString()) ? 'checked' : '';
+                const cssClass = isProtocolWriter ? 'protocol-writer' : '';
+                
+                const memberDiv = document.createElement('div');
+                memberDiv.className = 'member-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = 'member-' + member.id;
+                checkbox.name = 'members';
+                checkbox.value = member.id;
+                checkbox.className = 'member-checkbox';
+                if (isChecked) checkbox.checked = true;
+                
+                const label = document.createElement('label');
+                label.htmlFor = 'member-' + member.id;
+                label.className = 'member-name ' + cssClass;
+                label.textContent = member.name;
+                
+                memberDiv.appendChild(checkbox);
+                memberDiv.appendChild(label);
+                container.appendChild(memberDiv);
+            });
+            
+            console.log('✅ Mitglieder mit Auswahl gerendert, Anwesende:', anwesendeIds.length);
+        }
+
+        // AUTO-RESUME: Tagesordnungspunkte aus Daten laden - KORRIGIERT (DOM-basiert)
+        function loadAgendaItemsFromData(agendaItems) {
+            const container = document.getElementById('agenda-items');
+            container.innerHTML = '';
+            
+            agendaItemCount = 0; // Reset
+            
+            agendaItems.forEach(function(item) {
+                agendaItemCount++;
+                
+                // Container-Div erstellen
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'agenda-item';
+                itemDiv.id = 'agenda-' + agendaItemCount;
+                itemDiv.setAttribute('data-backend-id', item.id);
+                
+                // Header erstellen
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'agenda-header';
+                
+                const numberDiv = document.createElement('div');
+                numberDiv.className = 'agenda-number';
+                numberDiv.textContent = item.nummer;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.className = 'agenda-remove';
+                removeBtn.textContent = '🗑️ Entfernen';
+                removeBtn.onclick = function() { removeAgendaItem(agendaItemCount); };
+                
+                headerDiv.appendChild(numberDiv);
+                headerDiv.appendChild(removeBtn);
+                
+                // Titel-Gruppe erstellen
+                const titleGroup = document.createElement('div');
+                titleGroup.className = 'input-group';
+                
+                const titleLabel = document.createElement('label');
+                titleLabel.className = 'input-label';
+                titleLabel.textContent = 'Titel';
+                
+                const titleInput = document.createElement('input');
+                titleInput.type = 'text';
+                titleInput.className = 'input-field';
+                titleInput.name = 'agenda-title-' + agendaItemCount;
+                titleInput.placeholder = 'Titel des Tagesordnungspunkts';
+                titleInput.value = item.titel || '';
+                titleInput.required = true;
+                
+                titleGroup.appendChild(titleLabel);
+                titleGroup.appendChild(titleInput);
+                
+                // Beschreibung-Gruppe erstellen
+                const descGroup = document.createElement('div');
+                descGroup.className = 'input-group';
+                
+                const descLabel = document.createElement('label');
+                descLabel.className = 'input-label';
+                descLabel.textContent = 'Beschreibung';
+                
+                const descTextarea = document.createElement('textarea');
+                descTextarea.className = 'textarea-field';
+                descTextarea.name = 'agenda-description-' + agendaItemCount;
+                descTextarea.placeholder = 'Detailbeschreibung...';
+                descTextarea.rows = 4;
+                descTextarea.value = item.beschreibung || '';
+                descTextarea.required = true;
+                
+                descGroup.appendChild(descLabel);
+                descGroup.appendChild(descTextarea);
+                
+                // LLM-Checkbox erstellen
+                const llmDiv = document.createElement('div');
+                llmDiv.className = 'llm-checkbox';
+                
+                const llmCheckbox = document.createElement('input');
+                llmCheckbox.type = 'checkbox';
+                llmCheckbox.id = 'llm-' + agendaItemCount;
+                llmCheckbox.name = 'llm-improve-' + agendaItemCount;
+                llmCheckbox.checked = item.llmImprove || false;
+                
+                const llmLabel = document.createElement('label');
+                llmLabel.htmlFor = 'llm-' + agendaItemCount;
+                llmLabel.textContent = '🤖 Text mit KI verbessern lassen';
+                
+                llmDiv.appendChild(llmCheckbox);
+                llmDiv.appendChild(llmLabel);
+                
+                // Image-Upload erstellen
+                const imageDiv = document.createElement('div');
+                imageDiv.className = 'image-upload';
+                
+                const fileInput = document.createElement('input');
+                fileInput.type = 'file';
+                fileInput.id = 'images-' + agendaItemCount;
+                fileInput.name = 'agenda-images-' + agendaItemCount;
+                fileInput.multiple = true;
+                fileInput.accept = 'image/*';
+                fileInput.style.display = 'none';
+                fileInput.onchange = function() { handleImageUpload(agendaItemCount); };
+                
+                const uploadBtn = document.createElement('button');
+                uploadBtn.type = 'button';
+                uploadBtn.className = 'image-upload-btn';
+                uploadBtn.textContent = '📷 Bilder hinzufügen';
+                uploadBtn.onclick = function() { fileInput.click(); };
+                
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'image-preview';
+                previewDiv.id = 'preview-' + agendaItemCount;
+                
+                imageDiv.appendChild(fileInput);
+                imageDiv.appendChild(uploadBtn);
+                imageDiv.appendChild(previewDiv);
+                
+                // Alles zusammenfügen
+                itemDiv.appendChild(headerDiv);
+                itemDiv.appendChild(titleGroup);
+                itemDiv.appendChild(descGroup);
+                itemDiv.appendChild(llmDiv);
+                itemDiv.appendChild(imageDiv);
+                
+                container.appendChild(itemDiv);
+                
+                // Bilder für diesen Tagesordnungspunkt anzeigen
+                if (item.bilder && item.bilder.length > 0) {
+                    item.bilder.forEach(function(image) {
+                        addImageToPreview(previewDiv, {
+                            imageId: image.id,
+                            fileName: image.fileName,
+                            thumbnailUrl: 'https://drive.google.com/thumbnail?id=' + image.driveId + '&sz=w200-h150'
+                        });
+                    });
+                }
+            });
+            
+            console.log('✅ ' + agendaItems.length + ' Tagesordnungspunkte geladen');
+        }
+
+        // Globale Loading-Anzeige
+        function showGlobalLoading(message) {
+            // Zähler Loading
+            document.getElementById('counters-loading').style.display = 'block';
+            document.getElementById('counters-loading').textContent = '⏳ ' + message;
+            document.getElementById('counter-grid').style.display = 'none';
+            document.getElementById('total-number').style.display = 'none';
+            
+            // Mitglieder Loading
+            const membersGrid = document.getElementById('members-grid');
+            membersGrid.innerHTML = '<div class="counter-loading">⏳ ' + message + '</div>';
+        }
+
+        function hideGlobalLoading() {
+            document.getElementById('counters-loading').style.display = 'none';
+        }
+
+        // Success-Nachricht anzeigen
+        function showSuccessMessage(message) {
+            // Temporäre Erfolgs-Nachricht über der Form
+            const container = document.querySelector('.container');
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = message;
+            
+            // Nach Header einfügen
+            const header = container.querySelector('.header');
+            header.insertAdjacentElement('afterend', successDiv);
+            
+            // Nach 5 Sekunden ausblenden
+            setTimeout(function() {
+                successDiv.remove();
+            }, 5000);
+        }
+
+        // ==================== ZÄHLER-SYNCHRONISATION (BESTEHEND) ====================
+        
+        // Aktuelle Zähler vom Server laden
+        function loadCountersFromServer() {
+            console.log('📊 Lade aktuelle Zähler vom Server...');
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        console.log('✅ Zähler geladen:', result);
+                        
+                        // Aktuelle Werte als Basis setzen
+                        originalCounters = result.current;
+                        
+                        // Vorgeschlagene Werte in UI setzen
+                        document.getElementById('counter-ordentlich').textContent = result.suggested.ordentlich;
+                        document.getElementById('counter-ausserordentlich').textContent = result.suggested.ausserordentlich;
+                        document.getElementById('counter-fest').textContent = result.suggested.fest;
+                        
+                        // Änderungsanzeigen aktualisieren
+                        updateChangeDisplay('ordentlich', result.current.ordentlich, result.suggested.ordentlich);
+                        updateChangeDisplay('ausserordentlich', result.current.ausserordentlich, result.suggested.ausserordentlich);
+                        updateChangeDisplay('fest', result.current.fest, result.suggested.fest);
+                        
+                        // Gesamtnummer aktualisieren
+                        updateTotalNumber();
+                        
+                        // UI anzeigen
+                        showCountersUI();
+                        
+                    } else {
+                        console.error('❌ Fehler beim Laden der Zähler:', result.message);
+                        initializeDefaultCounters();
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Verbindungsfehler beim Laden der Zähler:', error);
+                    initializeDefaultCounters();
+                })
+                .getCurrentCountersForFrontend();
+        }
+        
+        // Zähler-UI anzeigen
+        function showCountersUI() {
+            document.getElementById('counters-loading').style.display = 'none';
+            document.getElementById('counter-grid').style.display = 'grid';
+            document.getElementById('total-number').style.display = 'block';
+        }
+        
+        // Änderungsanzeige aktualisieren
+        function updateChangeDisplay(type, originalValue, currentValue) {
+            const changeElement = document.getElementById('change-' + type);
+            
+            if (currentValue === originalValue) {
+                changeElement.textContent = '(unverändert)';
+            } else {
+                const diff = currentValue - originalValue;
+                const sign = diff > 0 ? '+' : '';
+                changeElement.textContent = '(war: ' + originalValue + ', ' + sign + diff + ')';
+            }
+        }
+        
+        // Fallback: Standard-Zähler initialisieren
+        function initializeDefaultCounters() {
+            console.log('⚠️ Verwende Standard-Zähler als Fallback');
+            
+            originalCounters = { ordentlich: 12, ausserordentlich: 6, fest: 2 };
+            
+            // Vorgeschlagene Werte (ordentlich +1)
+            document.getElementById('counter-ordentlich').textContent = 13;
+            document.getElementById('counter-ausserordentlich').textContent = 6;
+            document.getElementById('counter-fest').textContent = 2;
+            
+            // Änderungsanzeigen
+            document.getElementById('change-ordentlich').textContent = '(war: 12, +1)';
+            document.getElementById('change-ausserordentlich').textContent = '(unverändert)';
+            document.getElementById('change-fest').textContent = '(unverändert)';
+            
+            updateTotalNumber();
+            showCountersUI();
+        }
+
+        // ==================== MITGLIEDER LADEN ====================
+        
+        // Mitglieder vom Server laden
+        function loadMembersFromServer() {
+            console.log('👥 Lade Mitglieder vom Server...');
+            
+            google.script.run
+                .withSuccessHandler(function(members) {
+                    console.log('✅ Mitglieder geladen:', members.length);
+                    renderMembers(members);
+                })
+                .withFailureHandler(function(error) {
+                    console.error('❌ Fehler beim Laden der Mitglieder:', error);
+                    renderFallbackMembers();
+                })
+                .getMembersForFrontend();
+        }
+        
+        // Mitglieder in UI rendern
+        function renderMembers(members) {
+            const container = document.getElementById('members-grid');
+            container.innerHTML = '';
+            
+            members.forEach(function(member) {
+                const isProtocolWriter = member.name === 'Josef Schnürer';
+                const cssClass = isProtocolWriter ? 'protocol-writer' : '';
+                
+                const memberDiv = document.createElement('div');
+                memberDiv.className = 'member-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = 'member-' + member.id;
+                checkbox.name = 'members';
+                checkbox.value = member.id;
+                checkbox.className = 'member-checkbox';
+                if (isProtocolWriter) checkbox.checked = true;
+                
+                const label = document.createElement('label');
+                label.htmlFor = 'member-' + member.id;
+                label.className = 'member-name ' + cssClass;
+                label.textContent = member.name;
+                
+                memberDiv.appendChild(checkbox);
+                memberDiv.appendChild(label);
+                container.appendChild(memberDiv);
+            });
+            
+            membersLoaded = true;
+        }
+        
+        // Fallback-Mitglieder (hardcoded für Notfall)
+        function renderFallbackMembers() {
+            console.log('⚠️ Verwende Fallback-Mitglieder');
+            
+            const fallbackMembers = [
+                {id: 1, name: 'Josef Schnürer'},
+                {id: 2, name: 'Erwin Bertl'},
+                {id: 3, name: 'Norbert Glaubacker'},
+                {id: 4, name: 'Gerhard John'},
+                {id: 5, name: 'Gerald Faic'},
+                {id: 6, name: 'Otto Thür'},
+                {id: 7, name: 'Christian Thür'},
+                {id: 8, name: 'Friedrich Fochler'},
+                {id: 9, name: 'Johannes Mader'}
+            ];
+            
+            renderMembers(fallbackMembers);
+        }
+
+        // Fallback-Mitglieder mit Auswahl rendern
+        function renderFallbackMembersWithSelection(anwesendeIds) {
+            console.log('⚠️ Verwende Fallback-Mitglieder mit Auswahl');
+            
+            const fallbackMembers = [
+                {id: 1, name: 'Josef Schnürer'},
+                {id: 2, name: 'Erwin Bertl'},
+                {id: 3, name: 'Norbert Glaubacker'},
+                {id: 4, name: 'Gerhard John'},
+                {id: 5, name: 'Gerald Faic'},
+                {id: 6, name: 'Otto Thür'},
+                {id: 7, name: 'Christian Thür'},
+                {id: 8, name: 'Friedrich Fochler'},
+                {id: 9, name: 'Johannes Mader'}
+            ];
+            
+            renderMembersWithSelection(fallbackMembers, anwesendeIds);
+        }
+
+        // ==================== DATUM-FUNKTIONEN (BESTEHEND) ====================
+
+        // Datum-Initialisierung
+        function initializeDates() {
+            const now = new Date();
+            const lastFriday = getLastFriday(now);
+            const nextFirstFriday = getNextFirstFriday();
+            
+            const sitzungsdatumFormatted = formatDate(lastFriday);
+            const naechsterTerminFormatted = formatDate(nextFirstFriday);
+            
+            document.getElementById('sitzungsdatum').value = sitzungsdatumFormatted;
+            document.getElementById('naechster-termin').value = naechsterTerminFormatted;
+        }
+
+        // Letzten Freitag berechnen
+        function getLastFriday(date) {
+            const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            const dayOfWeek = localDate.getDay();
+            
+            if (dayOfWeek === 5) {
+                return localDate;
+            } else {
+                const lastFriday = new Date(localDate);
+                let daysBack;
+                
+                switch(dayOfWeek) {
+                    case 0: daysBack = 2; break;
+                    case 1: daysBack = 3; break;
+                    case 2: daysBack = 4; break;
+                    case 3: daysBack = 5; break;
+                    case 4: daysBack = 6; break;
+                    case 6: daysBack = 1; break;
+                    default: daysBack = 1;
+                }
+                
+                lastFriday.setDate(localDate.getDate() - daysBack);
+                return lastFriday;
+            }
+        }
+
+        // Nächsten ersten Freitag berechnen
+        function getNextFirstFriday() {
+            const today = new Date();
+            const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+            const dayOfWeek = nextMonth.getDay();
+            
+            let daysToAdd;
+            switch(dayOfWeek) {
+                case 0: daysToAdd = 5; break;
+                case 1: daysToAdd = 4; break;
+                case 2: daysToAdd = 3; break;
+                case 3: daysToAdd = 2; break;
+                case 4: daysToAdd = 1; break;
+                case 5: daysToAdd = 0; break;
+                case 6: daysToAdd = 6; break;
+                default: daysToAdd = 0;
+            }
+            
+            nextMonth.setDate(1 + daysToAdd);
+            return nextMonth;
+        }
+
+        // Datum formatieren für Input-Feld
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return year + '-' + month + '-' + day;
+        }
+
+        // ==================== ZÄHLER-FUNKTIONEN ====================
+
+        // Zähler aktualisieren (für manuelle Änderungen)
+        function updateCounter(type, change) {
+            const counterElement = document.getElementById('counter-' + type);
+            const changeElement = document.getElementById('change-' + type);
+            
+            let currentValue = parseInt(counterElement.textContent);
+            let newValue = Math.max(0, currentValue + change);
+            
+            counterElement.textContent = newValue;
+            
+            // Änderungsanzeige mit korrekten Original-Werten
+            const originalValue = originalCounters[type];
+            if (newValue === originalValue) {
+                changeElement.textContent = '(unverändert)';
+            } else {
+                const diff = newValue - originalValue;
+                const sign = diff > 0 ? '+' : '';
+                changeElement.textContent = '(war: ' + originalValue + ', ' + sign + diff + ')';
+            }
+            
+            updateTotalNumber();
+        }
+
+        // Gesamtnummer aktualisieren
+        function updateTotalNumber() {
+            const ordentlich = parseInt(document.getElementById('counter-ordentlich').textContent);
+            const ausserordentlich = parseInt(document.getElementById('counter-ausserordentlich').textContent);
+            const fest = parseInt(document.getElementById('counter-fest').textContent);
+            
+            const total = ordentlich + ausserordentlich + fest;
+            document.getElementById('total-number-value').textContent = total;
+        }
+
+        // ==================== TAGESORDNUNGSPUNKTE ====================
+
+        // Tagesordnungspunkt hinzufügen
+        function addAgendaItem() {
+            agendaItemCount++;
+            const container = document.getElementById('agenda-items');
+            
+            // Container-Div erstellen
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'agenda-item';
+            itemDiv.id = 'agenda-' + agendaItemCount;
+            
+            // Header
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'agenda-header';
+            
+            const numberDiv = document.createElement('div');
+            numberDiv.className = 'agenda-number';
+            numberDiv.textContent = agendaItemCount;
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'agenda-remove';
+            removeBtn.textContent = '🗑️ Entfernen';
+            removeBtn.onclick = function() { removeAgendaItem(agendaItemCount); };
+            
+            headerDiv.appendChild(numberDiv);
+            headerDiv.appendChild(removeBtn);
+            
+            // Titel
+            const titleGroup = document.createElement('div');
+            titleGroup.className = 'input-group';
+            
+            const titleLabel = document.createElement('label');
+            titleLabel.className = 'input-label';
+            titleLabel.textContent = 'Titel';
+            
+            const titleInput = document.createElement('input');
+            titleInput.type = 'text';
+            titleInput.className = 'input-field';
+            titleInput.name = 'agenda-title-' + agendaItemCount;
+            titleInput.placeholder = 'Titel des Tagesordnungspunkts';
+            titleInput.required = true;
+            
+            titleGroup.appendChild(titleLabel);
+            titleGroup.appendChild(titleInput);
+            
+            // Beschreibung
+            const descGroup = document.createElement('div');
+            descGroup.className = 'input-group';
+            
+            const descLabel = document.createElement('label');
+            descLabel.className = 'input-label';
+            descLabel.textContent = 'Beschreibung';
+            
+            const descTextarea = document.createElement('textarea');
+            descTextarea.className = 'textarea-field';
+            descTextarea.name = 'agenda-description-' + agendaItemCount;
+            descTextarea.placeholder = 'Detailbeschreibung...';
+            descTextarea.rows = 4;
+            descTextarea.required = true;
+            
+            descGroup.appendChild(descLabel);
+            descGroup.appendChild(descTextarea);
+            
+            // LLM Checkbox
+            const llmDiv = document.createElement('div');
+            llmDiv.className = 'llm-checkbox';
+            
+            const llmCheckbox = document.createElement('input');
+            llmCheckbox.type = 'checkbox';
+            llmCheckbox.id = 'llm-' + agendaItemCount;
+            llmCheckbox.name = 'llm-improve-' + agendaItemCount;
+            
+            const llmLabel = document.createElement('label');
+            llmLabel.htmlFor = 'llm-' + agendaItemCount;
+            llmLabel.textContent = '🤖 Text mit KI verbessern lassen';
+            
+            llmDiv.appendChild(llmCheckbox);
+            llmDiv.appendChild(llmLabel);
+            
+            // Image Upload
+            const imageDiv = document.createElement('div');
+            imageDiv.className = 'image-upload';
+            
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.id = 'images-' + agendaItemCount;
+            fileInput.name = 'agenda-images-' + agendaItemCount;
+            fileInput.multiple = true;
+            fileInput.accept = 'image/*';
+            fileInput.style.display = 'none';
+            fileInput.onchange = function() { handleImageUpload(agendaItemCount); };
+            
+            const uploadBtn = document.createElement('button');
+            uploadBtn.type = 'button';
+            uploadBtn.className = 'image-upload-btn';
+            uploadBtn.textContent = '📷 Bilder hinzufügen';
+            uploadBtn.onclick = function() { fileInput.click(); };
+            
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'image-preview';
+            previewDiv.id = 'preview-' + agendaItemCount;
+            
+            imageDiv.appendChild(fileInput);
+            imageDiv.appendChild(uploadBtn);
+            imageDiv.appendChild(previewDiv);
+            
+            // Zusammenfügen
+            itemDiv.appendChild(headerDiv);
+            itemDiv.appendChild(titleGroup);
+            itemDiv.appendChild(descGroup);
+            itemDiv.appendChild(llmDiv);
+            itemDiv.appendChild(imageDiv);
+            
+            container.appendChild(itemDiv);
+        }
+
+        // Tagesordnungspunkt entfernen
+        function removeAgendaItem(id) {
+            const item = document.getElementById('agenda-' + id);
+            if (item) {
+                item.remove();
+                renumberAgendaItems();
+            }
+        }
+
+        // Tagesordnungspunkte neu nummerieren
+        function renumberAgendaItems() {
+            const items = document.querySelectorAll('.agenda-item');
+            items.forEach(function(item, index) {
+                const numberElement = item.querySelector('.agenda-number');
+                numberElement.textContent = index + 1;
+            });
+        }
+
+        // ==================== BILD-UPLOAD ====================
+
+        // Bild-Upload verarbeiten
+        function handleImageUpload(agendaId) {
+            const fileInput = document.getElementById('images-' + agendaId);
+            const previewContainer = document.getElementById('preview-' + agendaId);
+            
+            if (fileInput.files.length === 0) return;
+            
+            // Loading-Anzeige
+            const uploadButton = fileInput.nextElementSibling;
+            const originalText = uploadButton.textContent;
+            uploadButton.textContent = '⏳ Bilder werden hochgeladen...';
+            uploadButton.disabled = true;
+            
+            // Bilder zu Base64 konvertieren
+            const imagePromises = Array.from(fileInput.files).map(function(file) {
+                return new Promise(function(resolve, reject) {
+                    if (!file.type.startsWith('image/')) {
+                        reject(new Error(file.name + ' ist kein Bild'));
+                        return;
+                    }
+                    
+                    if (file.size > 5 * 1024 * 1024) {
+                        reject(new Error(file.name + ' ist zu groß (max. 5MB)'));
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        resolve({
+                            name: file.name,
+                            data: e.target.result,
+                            size: file.size
+                        });
+                    };
+                    reader.onerror = function() {
+                        reject(new Error('Fehler beim Lesen von ' + file.name));
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+            
+            // Alle Bilder konvertieren und hochladen
+            Promise.all(imagePromises)
+                .then(function(imagesData) {
+                    google.script.run
+                        .withSuccessHandler(function(result) {
+                            uploadButton.textContent = originalText;
+                            uploadButton.disabled = false;
+                            
+                            if (result.success) {
+                                result.results.forEach(function(imgResult) {
+                                    if (imgResult.success) {
+                                        addImageToPreview(previewContainer, imgResult);
+                                    }
+                                });
+                                
+                                alert('✅ ' + result.totalUploaded + ' Bilder erfolgreich hochgeladen!');
+                                
+                                if (result.totalFailed > 0) {
+                                    alert('⚠️ ' + result.totalFailed + ' Bilder fehlgeschlagen.');
+                                }
+                            } else {
+                                alert('❌ Upload fehlgeschlagen: ' + result.message);
+                            }
+                            
+                            fileInput.value = '';
+                        })
+                        .withFailureHandler(function(error) {
+                            uploadButton.textContent = originalText;
+                            uploadButton.disabled = false;
+                            alert('❌ Verbindungsfehler: ' + error.message);
+                        })
+                        .uploadMultipleImages(imagesData, 'agenda-' + agendaId);
+                })
+                .catch(function(error) {
+                    uploadButton.textContent = originalText;
+                    uploadButton.disabled = false;
+                    alert('❌ Fehler beim Verarbeiten: ' + error.message);
+                });
+        }
+        
+        // Bild zur Vorschau hinzufügen
+        function addImageToPreview(container, imageResult) {
+            const imageDiv = document.createElement('div');
+            imageDiv.className = 'image-item';
+            imageDiv.setAttribute('data-image-id', imageResult.imageId);
+            
+            const img = document.createElement('img');
+            img.src = imageResult.thumbnailUrl;
+            img.alt = imageResult.fileName;
+            img.title = imageResult.fileName;
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'image-remove';
+            removeBtn.textContent = '×';
+            removeBtn.onclick = function() { removeImageFromServer(imageResult.imageId, this); };
+            
+            imageDiv.appendChild(img);
+            imageDiv.appendChild(removeBtn);
+            container.appendChild(imageDiv);
+        }
+        
+        // Bild vom Server löschen
+        function removeImageFromServer(imageId, buttonElement) {
+            if (!confirm('Bild wirklich löschen?')) return;
+            
+            const imageItem = buttonElement.parentElement;
+            const originalButton = buttonElement.textContent;
+            buttonElement.textContent = '⏳';
+            buttonElement.disabled = true;
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        imageItem.remove();
+                    } else {
+                        alert('❌ Fehler beim Löschen: ' + result.message);
+                        buttonElement.textContent = originalButton;
+                        buttonElement.disabled = false;
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    alert('❌ Verbindungsfehler: ' + error.message);
+                    buttonElement.textContent = originalButton;
+                    buttonElement.disabled = false;
+                })
+                .deleteImage(imageId);
+        }
+
+        // ==================== SPEICHERN & SENDEN (ERWEITERT) ====================
+
+        // ERWEITERTE saveDraft-Funktion (ID beibehalten wenn vorhanden)
+        function saveDraft() {
+            const formData = collectFormData();
+            formData.status = 'draft';
+            
+            // Wenn wir ein geladenes Protokoll haben, ID beibehalten
+            if (loadedProtocolId) {
+                formData.id = loadedProtocolId;
+                console.log('💾 Speichere bestehenden Draft:', loadedProtocolId);
+            }
+            
+            google.script.run
+                .withSuccessHandler(function(result) {
+                    if (result.success) {
+                        alert('✅ Entwurf erfolgreich gespeichert!');
+                        console.log('Draft saved:', result);
+                        
+                        // ID für weitere Saves merken
+                        if (!loadedProtocolId) {
+                            loadedProtocolId = result.protocolId;
+                        }
+                    } else {
+                        alert('❌ Fehler beim Speichern: ' + result.message);
+                        console.error('Save error:', result);
+                    }
+                })
+                .withFailureHandler(function(error) {
+                    alert('❌ Verbindungsfehler: ' + error.message);
+                    console.error('Connection error:', error);
+                })
+                .saveDraft(formData);
+        }
+
+        // ERWEITERTE collectFormData-Funktion (Backend-IDs verwenden)
+        function collectFormData() {
+            const formData = {
+                id: loadedProtocolId,
+                counters: {
+                    ordentlich: parseInt(document.getElementById('counter-ordentlich').textContent),
+                    ausserordentlich: parseInt(document.getElementById('counter-ausserordentlich').textContent),
+                    fest: parseInt(document.getElementById('counter-fest').textContent)
+                },
+                sitzungsdatum: document.getElementById('sitzungsdatum').value,
+                ort: document.getElementById('ort').value,
+                naechsterTermin: document.getElementById('naechster-termin').value,
+                anwesende: Array.from(document.querySelectorAll('input[name="members"]:checked')).map(function(cb) { return cb.value; }),
+                agendaItems: []
+            };
+            
+            // Tagesordnungspunkte sammeln
+            document.querySelectorAll('.agenda-item').forEach(function(item, index) {
+                const title = item.querySelector('input[type="text"]').value;
+                const description = item.querySelector('textarea').value;
+                const llmImprove = item.querySelector('input[type="checkbox"]').checked;
+                const backendId = item.getAttribute('data-backend-id'); // Backend-ID lesen
+                
+                const agendaItem = {
+                    nummer: index + 1,
+                    titel: title,
+                    beschreibung: description,
+                    llmImprove: llmImprove,
+                    bilder: []
+                };
+                
+                // Backend-ID mitgeben falls vorhanden (für Updates)
+                if (backendId) {
+                    agendaItem.id = backendId;
+                }
+                
+                formData.agendaItems.push(agendaItem);
+            });
+            
+            return formData;
+        }
+
+        // Formular absenden
+        document.getElementById('protocolForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = collectFormData();
+            formData.status = 'final';
+            
+            // Bestätigung vor dem Versenden
+            if (confirm('Protokoll wirklich erstellen und versenden?')) {
+                google.script.run
+                    .withSuccessHandler(function(result) {
+                        if (result.success) {
+                            alert('✅ Protokoll erfolgreich erstellt und versendet!\n\nProtokoll-ID: ' + result.protocolId);
+                            console.log('Protocol created:', result);
+                        } else {
+                            alert('❌ Fehler beim Erstellen: ' + result.message);
+                            console.error('Creation error:', result);
+                        }
+                    })
+                    .withFailureHandler(function(error) {
+                        alert('❌ Verbindungsfehler: ' + error.message);
+                        console.error('Connection error:', error);
+                    })
+                    .createFinalProtocol(formData);
+            }
+        });
+        
+  </script> <!-- ← DIESE Zeile muss da sein -->
+</body>
+</html>
