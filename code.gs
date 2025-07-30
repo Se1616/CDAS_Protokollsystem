@@ -333,4 +333,3 @@ function frontendTestPing() {
     deployment: 'Neues Deployment aktiv'
   };
 }
-
