@@ -61,26 +61,6 @@ function getLastDraftProtocol() {
   }
 }
 
-// AUTO-RESUME: Letztes Draft-Protokoll laden
-function aaaagetLastDraftProtocol() {
-  try {
-    const result = AutoResumeService.getLastDraftProtocol();
-    
-    // Date-Objekte für Frontend-Übertragung konvertieren
-    if (result && result.success && result.protocolData && result.protocolData.createdAt) {
-      result.protocolData.createdAt = result.protocolData.createdAt.toISOString();
-    }
-    
-    return result;
-    
-  } catch (error) {
-    console.error('❌ Fehler bei getLastDraftProtocol:', error);
-    return {
-      success: false,
-      message: 'Fehler beim Laden des Draft-Protokolls'
-    };
-  }
-}
 
 // AUTO-RESUME: Letztes Draft-Protokoll laden
 function zzzzzgetLastDraftProtocol() {
@@ -333,3 +313,4 @@ function frontendTestPing() {
     deployment: 'Neues Deployment aktiv'
   };
 }
+
