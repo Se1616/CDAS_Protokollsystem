@@ -49,7 +49,7 @@ const DocumentService = {
     body.clear();
     
     this.createDocumentHeader(body, formData);
-    this.createSessionInfo(body, formData);
+    this.createCompactSessionInfo(body, formData);
     this.createParticipantsInfo(body, formData);
     this.createAgendaSection(body, formData, protocolId);
     this.applyDocumentStyling(doc);
@@ -61,11 +61,11 @@ const DocumentService = {
     
     const clubName = body.appendParagraph('CLUB DER ALTEN SÄCKE');
     clubName.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-    clubName.editAsText().setFontSize(28).setBold(true).setForegroundColor('#1a365d');
+    clubName.editAsText().setFontSize(30).setBold(true).setForegroundColor('#1a365d');
     
     const protocolTitle = body.appendParagraph('Sitzungsprotokoll');
     protocolTitle.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-    protocolTitle.editAsText().setFontSize(16).setForegroundColor('#4a5568');
+    protocolTitle.editAsText().setFontSize(22).setForegroundColor('#4a5568');
     
     const separator1 = body.appendParagraph('══════════════════════════════════════════════════');
     separator1.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
@@ -75,34 +75,67 @@ const DocumentService = {
     separator2.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
     separator2.editAsText().setForegroundColor('#2c5282').setBold(true).setFontSize(10);
     
-    body.appendParagraph('');
-    body.appendParagraph('');
+    body.appendParagraph('').editAsText().setFontSize(11);
+    body.appendParagraph('').editAsText().setFontSize(11);
   },
-  
-  // Sitzungsinformationen
-  createSessionInfo(body, formData) {
-    const totalNumber = formData.counters.ordentlich + formData.counters.ausserordentlich + formData.counters.fest;
+
+  createCompactSessionInfo(body, data) {
+    const totalNumber = data.counters.ordentlich + data.counters.ausserordentlich + data.counters.fest;
     
-    const sessionNumber = `Sitzung Nr. ${totalNumber} (${formData.counters.ordentlich}. ordentliche, ${formData.counters.ausserordentlich}. außerordentliche, ${formData.counters.fest}. Festsitzung)`;
-    const sessionPara = body.appendParagraph(sessionNumber);
-    sessionPara.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-    sessionPara.editAsText().setFontSize(16).setBold(true).setForegroundColor('#1a365d');
-    sessionPara.setBackgroundColor('#e2e8f0');
+    // Session-Nummer als einfacher Text mit leichtem Hintergrund
+    const sessionHeader1 = body.appendParagraph(`Sitzung Nr. ${totalNumber}`);
+    sessionHeader1.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    sessionHeader1.editAsText()
+      .setFontSize(16)
+      .setBold(true)
+      .setForegroundColor('#2c5282');
+    sessionHeader1.setBackgroundColor('#f0f7ff');
+    sessionHeader1.setSpacingAfter(0); // Kein Abstand zwischen den Zeilen
+
+    // Zweite Zeile
+    const sessionHeader2 = body.appendParagraph(`(${data.counters.ordentlich}. ordentliche, ${data.counters.ausserordentlich}. außerordentliche, ${data.counters.fest}. Festsitzung)`);
+    sessionHeader2.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
+    sessionHeader2.editAsText()
+      .setFontSize(14)  // Etwas kleiner für die Details
+      .setBold(false)   // Nicht fett für weniger Gewicht
+      .setForegroundColor('#2c5282');
+    sessionHeader2.setBackgroundColor('#f0f7ff');
+    sessionHeader2.setSpacingAfter(15);
     
-    body.appendParagraph('');
+    // Info als einfache Tabelle ohne viel Styling
+    const infoTable = body.appendTable();
+    infoTable.setBorderWidth(1);
+    infoTable.setBorderColor('#eaeaea');
     
-    const sitzungsdatum = UtilService.formatDateDE(formData.sitzungsdatum);
-    const nextTermin = formData.naechsterTermin ? UtilService.formatDateDE(formData.naechsterTermin) : 'TBD';
+    // Erste Zeile: Datum und Ort
+    const row1 = infoTable.appendTableRow();
     
-    const metaInfo1 = body.appendParagraph(`Datum: ${sitzungsdatum}                                        Ort: ${formData.ort}`);
-    metaInfo1.editAsText().setFontSize(12).setBold(true);
-    metaInfo1.setBackgroundColor('#f7fafc');
+    const dateCell = row1.appendTableCell();
+    const datePara = dateCell.appendParagraph('Datum: ' + formatDateDE(data.sitzungsdatum));
+    datePara.editAsText().setFontSize(16).setBackgroundColor('#ffffff').setFontFamily('Arial');
+    dateCell.setPaddingTop(8).setPaddingBottom(8).setPaddingLeft(15);
     
-    const metaInfo2 = body.appendParagraph(`Protokollführer: Josef Schnürer              Nächster Termin: ${nextTermin}`);
-    metaInfo2.editAsText().setFontSize(12).setBold(true);
-    metaInfo2.setBackgroundColor('#f7fafc');
+    const ortCell = row1.appendTableCell();
+    const ortPara = ortCell.appendParagraph('Ort: ' + data.ort);
+    ortPara.editAsText().setFontSize(16).setBackgroundColor('#ffffff').setFontFamily('Arial');
+    ortCell.setPaddingTop(8).setPaddingBottom(8).setPaddingLeft(15);
     
-    body.appendParagraph('');
+    // Zweite Zeile: Protokollführer und nächster Termin
+    const row2 = infoTable.appendTableRow();
+    
+    const protocolCell = row2.appendTableCell();
+    const protocolPara = protocolCell.appendParagraph('Protokollführer: Josef Schnürer');
+    protocolPara.editAsText().setFontSize(16).setBackgroundColor('#f9fafb').setFontFamily('Arial');
+    protocolCell.setPaddingTop(8).setPaddingBottom(8).setPaddingLeft(15);
+    protocolCell.setBackgroundColor('#f9fafb');
+    
+    const nextCell = row2.appendTableCell();
+    const nextPara = nextCell.appendParagraph('Nächster Termin: ' + formatDateDE(data.naechsterTermin));
+    nextPara.editAsText().setFontSize(16).setBackgroundColor('#f9fafb').setFontFamily('Arial');
+    nextCell.setPaddingTop(8).setPaddingBottom(8).setPaddingLeft(15).setFontFamily('Arial');
+    nextCell.setBackgroundColor('#f9fafb');
+    
+    body.appendParagraph('').editAsText().setFontSize(11);
   },
   
   // Teilnehmer-Informationen
@@ -114,49 +147,49 @@ const DocumentService = {
     const abwesende = allMembers.filter(m => !anwesendeIds.includes(m.id)).map(m => m.name);
     
     const participantsTitle = body.appendParagraph('TEILNEHMER');
-    participantsTitle.editAsText().setFontSize(14).setBold(true).setForegroundColor('#2c5282');
+    participantsTitle.editAsText().setFontSize(16).setFontFamily('Arial').setBold(true).setForegroundColor('#2c5282');
     participantsTitle.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
-    participantsTitle.setBackgroundColor('#e2e8f0');
+    participantsTitle.setBackgroundColor('#eaeaea');
     
-    body.appendParagraph('');
+    body.appendParagraph('').editAsText().setFontSize(11);
     
     const anwesendeTitle = body.appendParagraph('✓ Anwesend:');
-    anwesendeTitle.editAsText().setFontSize(13).setBold(true).setForegroundColor('#2c5282');
+    anwesendeTitle.editAsText().setFontSize(16).setBold(true).setForegroundColor('#2c5282');
     
     const anwesendeText = anwesende.join(', ');
     const anwesendePara = body.appendParagraph(anwesendeText);
-    anwesendePara.editAsText().setFontSize(11);
+    anwesendePara.editAsText().setFontSize(16);
     anwesendePara.setBackgroundColor('#f0fff4');
     anwesendePara.setIndentFirstLine(20);
     
-    body.appendParagraph('');
+    body.appendParagraph('').editAsText().setFontSize(11);
     
     if (abwesende.length > 0) {
       const abwesendeTitle = body.appendParagraph('✗ Abwesend:');
-      abwesendeTitle.editAsText().setFontSize(13).setBold(true).setForegroundColor('#2c5282');
+      abwesendeTitle.editAsText().setFontSize(16).setBold(true).setForegroundColor('#2c5282');
       
       const abwesendeText = abwesende.join(', ');
       const abwesendePara = body.appendParagraph(abwesendeText);
-      abwesendePara.editAsText().setFontSize(11);
+      abwesendePara.editAsText().setFontSize(16);
       abwesendePara.setBackgroundColor('#fef2f2');
       abwesendePara.setIndentFirstLine(20);
       
-      body.appendParagraph('');
+      body.appendParagraph('').editAsText().setFontSize(11);
     }
   },
   
   // Tagesordnungssektion
   createAgendaSection(body, formData, protocolId) {
     const agendaTitle = body.appendParagraph('TAGESORDNUNG');
-    agendaTitle.editAsText().setFontSize(14).setBold(true).setForegroundColor('#2c5282');
+    agendaTitle.editAsText().setFontSize(16).setBold(true).setFontFamily('Arial').setForegroundColor('#2c5282');
     agendaTitle.setAlignment(DocumentApp.HorizontalAlignment.LEFT);
-    agendaTitle.setBackgroundColor('#e2e8f0');
+    agendaTitle.setBackgroundColor('#eaeaea');
     
-    const separator = body.appendParagraph('════════════════════════════════════════════════════');
+    const separator = body.appendParagraph('════════════════════════════════════════════════════════');
     separator.setAlignment(DocumentApp.HorizontalAlignment.LEFT);
     separator.editAsText().setForegroundColor('#2c5282').setFontSize(10);
     
-    body.appendParagraph('');
+    body.appendParagraph('').editAsText().setFontSize(11);
     
     formData.agendaItems.forEach((item, index) => {
       this.createAgendaItem(body, item, index + 1, protocolId);
@@ -167,19 +200,19 @@ const DocumentService = {
   createAgendaItem(body, item, number, protocolId) {
     const titleText = `${number}. ${item.titel}`;
     const titlePara = body.appendParagraph(titleText);
-    titlePara.editAsText().setFontSize(13).setBold(true).setForegroundColor('#1a365d');
+    titlePara.editAsText().setFontSize(16).setFontFamily('Arial').setBold(true).setForegroundColor('#1a365d');
     titlePara.setBackgroundColor('#e6fffa');
     titlePara.setIndentFirstLine(10);
     
     if (item.beschreibung && item.beschreibung.trim()) {
       const descPara = body.appendParagraph(item.beschreibung);
-      descPara.editAsText().setFontSize(11);
-      descPara.setBackgroundColor('#f0f9ff');
+      descPara.editAsText().setFontSize(16).setFontFamily('Arial');
+      descPara.setBackgroundColor('#ffffff');
       descPara.setIndentFirstLine(30);
       descPara.setIndentStart(15);
     } else {
       const emptyPara = body.appendParagraph('[Keine Beschreibung]');
-      emptyPara.editAsText().setFontSize(11).setItalic(true).setForegroundColor('#999999');
+      emptyPara.editAsText().setFontSize(3).setItalic(true).setForegroundColor('#999999');
       emptyPara.setIndentFirstLine(30);
       emptyPara.setIndentStart(15);
     }
@@ -191,13 +224,13 @@ const DocumentService = {
       this.insertAgendaImages(body, realAgendaId);
     }
     
-    body.appendParagraph('');
+    body.appendParagraph('').editAsText().setFontSize(11);
     
     const itemSeparator = body.appendParagraph('───────────────────────────────────────────────────────');
     itemSeparator.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
     itemSeparator.editAsText().setForegroundColor('#cbd5e0').setFontSize(8);
     
-    body.appendParagraph('');
+    body.appendParagraph('').editAsText().setFontSize(11);
   },
   
   // Bilder in Tagesordnungspunkt einfügen
@@ -241,7 +274,7 @@ const DocumentService = {
             caption.setAlignment(DocumentApp.HorizontalAlignment.CENTER);
             caption.setIndentStart(20);
             
-            body.appendParagraph('');
+            body.appendParagraph('').editAsText().setFontSize(11);
             
             console.log(`✅ Bild ${index + 1} erfolgreich eingefügt:`, image.fileName);
             
@@ -268,7 +301,6 @@ const DocumentService = {
     
     const style = {};
     style[DocumentApp.Attribute.FONT_FAMILY] = 'Arial';
-    style[DocumentApp.Attribute.FONT_SIZE] = 11;
     style[DocumentApp.Attribute.LINE_SPACING] = 1.15;
     body.setAttributes(style);
     
