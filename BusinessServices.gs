@@ -607,11 +607,10 @@ const ProtocolService = {
         this.createNewAgendaItem(sheet, realAgendaId, item, protocolId);
       }
       
-      // Frontend-Mapping nur für neue Items
-      if (!item.id) {
-        const frontendId = `agenda-${item.nummer}`;
-        idMapping[frontendId] = realAgendaId;
-      }
+      // Frontend-Mapping IMMER erstellen (sowohl für neue als auch bestehende Items)
+      const frontendId = `agenda-${item.nummer}`;
+      idMapping[frontendId] = realAgendaId;
+      console.log(`🔄 Mapping erstellt: ${frontendId} → ${realAgendaId}`);
     });
     
     return idMapping;
